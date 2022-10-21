@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GrowbrewProxy
 {
-    class DllInjector
+    internal class DllInjector
     {
         //%temp%\\GrowXHEAT\\GrowXHEAT_win32-debug.dll
 
@@ -59,7 +55,7 @@ namespace GrowbrewProxy
 
         // VirtualFreeEx signture  https://www.pinvoke.net/default.aspx/kernel32.virtualfreeex
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress,
+        private static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress,
         int dwSize, AllocationType dwFreeType);
 
         [Flags]
@@ -79,7 +75,7 @@ namespace GrowbrewProxy
         }
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        static extern IntPtr VirtualAllocEx(
+        private static extern IntPtr VirtualAllocEx(
             IntPtr hProcess,
             IntPtr lpAddress,
             IntPtr dwSize,
@@ -88,6 +84,7 @@ namespace GrowbrewProxy
 
         // WriteProcessMemory signture https://www.pinvoke.net/default.aspx/kernel32/WriteProcessMemory.html
         [DllImport("kernel32.dll", SetLastError = true)]
+        [Obsolete]
         public static extern bool WriteProcessMemory(
         IntPtr hProcess,
         IntPtr lpBaseAddress,
@@ -97,7 +94,7 @@ namespace GrowbrewProxy
 
         // GetProcAddress signture https://www.pinvoke.net/default.aspx/kernel32.getprocaddress
         [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
-        static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+        private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
         // GetModuleHandle signture http://pinvoke.net/default.aspx/kernel32.GetModuleHandle
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
@@ -105,7 +102,7 @@ namespace GrowbrewProxy
 
         // CreateRemoteThread signture https://www.pinvoke.net/default.aspx/kernel32.createremotethread
         [DllImport("kernel32.dll")]
-        static extern IntPtr CreateRemoteThread(
+        private static extern IntPtr CreateRemoteThread(
         IntPtr hProcess,
         IntPtr lpThreadAttributes,
         uint dwStackSize,
@@ -119,6 +116,6 @@ namespace GrowbrewProxy
         [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
         [SuppressUnmanagedCodeSecurity]
         [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool CloseHandle(IntPtr hObject);
+        private static extern bool CloseHandle(IntPtr hObject);
     }
 }

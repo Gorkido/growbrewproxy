@@ -1,21 +1,16 @@
 ﻿// thanks to iProgramInCpp#0489, most things are made by him in the GrowtopiaCustomClient, 
 // I have just rewritten it into c# and maybe also improved. -playingo
 
-using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace GrowbrewProxy
 {
     public class Player //NetAvatar
     {
-        
+
 
         public string name = "";
         public string country = "";
@@ -30,7 +25,7 @@ namespace GrowbrewProxy
         public Inventory inventory; // should only not be null if player is local.
         public void SerializePlayerInventory(byte[] inventoryData)
         {
-            int invPacketSize = inventoryData.Length;
+            _ = inventoryData.Length;
             inventory.version = inventoryData[0];
             inventory.backpackSpace = BitConverter.ToInt16(inventoryData, 1);
             int inventoryitemCount = BitConverter.ToInt16(inventoryData, 5); // trade exceeding
@@ -38,14 +33,14 @@ namespace GrowbrewProxy
 
             for (int i = 0; i < inventoryitemCount; i++)
             {
-                int pos = 7 + i * 4;
+                int pos = 7 + (i * 4);
                 inventory.items[i].itemID = BitConverter.ToUInt16(inventoryData, pos);
                 inventory.items[i].amount = BitConverter.ToInt16(inventoryData, pos + 2);
             }
         }
     };
-    
-    
+
+
     public struct Inventory
     {
         public byte version;
@@ -66,9 +61,9 @@ namespace GrowbrewProxy
         public int tileState;
         public byte[] tileExtra; // might be unused.
         public string str_1; // might be unused.
-        public byte type;        
+        public byte type;
     };
-        
+
 
     public struct DroppedObject
     {
@@ -81,18 +76,19 @@ namespace GrowbrewProxy
     public class World
     {
         // from docs.microsoft.com, used for implementing a disposable class.
-       
-        
-        
+
+
+
 
         /* (object map) */
-        public List<Player> players = new List<Player>();
-        public Player player = new Player();
+        public List<Player> players = new();
+        public Player player = new();
         public Tile[] tiles;
-        /* (object map) */ public List<DroppedObject> droppedItems = new List<DroppedObject>();
-        DroppedObject dropped = new DroppedObject();
+        /* (object map) */
+        public List<DroppedObject> droppedItems = new();
+        private DroppedObject dropped = new();
         public int dropped_ITEMUID = -1;
-        int dropped_TOTALUIDS = 0;
+        private int dropped_TOTALUIDS = 0;
         internal int tilesProperlySerialized = 0;
         public string currentWorld = "EXIT";
         public int width, height;
@@ -100,10 +96,10 @@ namespace GrowbrewProxy
         public int netID = 0;
         public int userID = 0; // better keep track of userid too :D
         private int readPos = 0; // good to keep track of world serialization pos :)
-        int tileCount = 0;
+        private int tileCount = 0;
         internal ulong total_bytes_serialized = 0;
 
-        void clearPlayers()
+        private void clearPlayers()
         {
             players.Clear();
             netID = 0;
@@ -114,7 +110,10 @@ namespace GrowbrewProxy
         {
             foreach (Player pl in players)
             {
-                if (pl.name == name) return pl.netID;
+                if (pl.name == name)
+                {
+                    return pl.netID;
+                }
             }
             return -1;
         }
@@ -123,7 +122,10 @@ namespace GrowbrewProxy
         {
             foreach (Player pl in players)
             {
-                if (pl.name == name) return pl.userID;
+                if (pl.name == name)
+                {
+                    return pl.userID;
+                }
             }
             return -1;
         }
@@ -132,7 +134,10 @@ namespace GrowbrewProxy
         {
             foreach (Player pl in players)
             {
-                if (pl.netID == netID) return new Point(pl.X, pl.Y);
+                if (pl.netID == netID)
+                {
+                    return new Point(pl.X, pl.Y);
+                }
             }
             return new Point(-1, -1);
         }
@@ -141,8 +146,12 @@ namespace GrowbrewProxy
         {
             int x = 32, y = 32;
 
-            if (MainForm.pForm == null) return new Point(x, y);
-            var playerControls = MainForm.pForm.playerBox.Controls;
+            if (MainForm.pForm == null)
+            {
+                return new Point(x, y);
+            }
+
+            Control.ControlCollection playerControls = MainForm.pForm.playerBox.Controls;
 
 
             for (int i = 0; i < playerControls.Count; i++)
@@ -154,13 +163,13 @@ namespace GrowbrewProxy
                     x += 86 * 2;
                 }
             }
-        
+
             return new Point(x, y);
         }
 
         public void AddPlayerControlToBox(Player pl) // todo - universally add player...
         {
-            string username = pl.name.Substring(0, pl.name.Length - 2);
+            string username = pl.name[..^2];
 
             MainForm.pForm.AddPlayerBtnToForm(username, pl.netID, GetPlayerBtnLocation());
             //MainForm.pControls.Add()
@@ -168,14 +177,14 @@ namespace GrowbrewProxy
 
         public void RemovePlayerControl(int netID)
         {
-            var playerForm = MainForm.pForm;
-            
+            PlayerForm playerForm = MainForm.pForm;
+
             for (int i = 0; i < playerForm.Controls.Count; i++)
             {
-                var control = playerForm.Controls[i];
+                Control control = playerForm.Controls[i];
                 if (control.Name == netID.ToString())
                 {
-                    MainForm.LogText += ("[" + DateTime.UtcNow + "] (PROXY): Removed player from player control box with netID: " + netID.ToString() + "\n");
+                    MainForm.LogText += "[" + DateTime.UtcNow + "] (PROXY): Removed player from player control box with netID: " + netID.ToString() + "\n";
                     playerForm.Controls.RemoveAt(i);
                     break;
                 }
@@ -184,11 +193,11 @@ namespace GrowbrewProxy
 
         private void TileExtra_Serialize(byte[] dataPassed, int loc)
         {
-            
+
             byte a = dataPassed[readPos++];
             tiles[loc].type = a;
 
-            short len = 0;
+            short len;
             //MainForm.LogText += ("[" + DateTime.UtcNow + "] Serializing with type: " + a.ToString() + "\n");
             switch (a)
             {
@@ -218,7 +227,7 @@ namespace GrowbrewProxy
                         // wl shit, owner userID etc...
                         readPos++;
                         byte adminCount = dataPassed[readPos + 4];
-                        readPos += (16 + (adminCount * 4));
+                        readPos += 16 + (adminCount * 4);
                     }
                     break;
                 case 4:
@@ -261,13 +270,13 @@ namespace GrowbrewProxy
                 case 0x0f:
                     {
                         // bunny egg
-                        readPos++; 
+                        readPos++;
                     }
                     break;
                 case 0x10:
                     {
                         // gameblocks
-                        readPos++; 
+                        readPos++;
                     }
                     break;
                 case 0x12:
@@ -293,7 +302,11 @@ namespace GrowbrewProxy
                     {
                         // Crime in progr....
                         len = BitConverter.ToInt16(dataPassed, readPos); readPos += 2;
-                        for (int i = 0; i < len; i++) tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        for (int i = 0; i < len; i++)
+                        {
+                            tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        }
+
                         readPos += 5;
                     }
                     break;
@@ -333,7 +346,7 @@ namespace GrowbrewProxy
                     break;
                 case 0x21:
                     {
-                        
+
                         if (tiles[loc].fg == 3394)
                         {
                             len = BitConverter.ToInt16(dataPassed, readPos); readPos += 2;
@@ -345,13 +358,20 @@ namespace GrowbrewProxy
                     {
                         readPos += 4;
                         len = BitConverter.ToInt16(dataPassed, readPos); readPos += 2;
-                        for (int i = 0; i < len; i++) tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        for (int i = 0; i < len; i++)
+                        {
+                            tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        }
                     }
                     break;
                 case 0x25:
                     {
                         len = BitConverter.ToInt16(dataPassed, readPos); readPos += 2;
-                        for (int i = 0; i < len; i++) tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        for (int i = 0; i < len; i++)
+                        {
+                            tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        }
+
                         readPos += 32;
                     }
                     break;
@@ -384,21 +404,29 @@ namespace GrowbrewProxy
                         readPos += 4;
                         byte adminCount = dataPassed[readPos];
                         readPos += 4; // guild shit
-                        readPos += (adminCount * 4);
+                        readPos += adminCount * 4;
 
                     }
                     break;
                 case 0x2f:
                     {
                         len = BitConverter.ToInt16(dataPassed, readPos); readPos += 2;
-                        for (int i = 0; i < len; i++) tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        for (int i = 0; i < len; i++)
+                        {
+                            tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        }
+
                         readPos += 5;
                     }
                     break;
                 case 0x30:
                     {
                         len = BitConverter.ToInt16(dataPassed, readPos); readPos += 2;
-                        for (int i = 0; i < len; i++) tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        for (int i = 0; i < len; i++)
+                        {
+                            tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        }
+
                         readPos += 26;
                     }
                     break;
@@ -430,7 +458,11 @@ namespace GrowbrewProxy
                     {
                         // lucky token
                         len = BitConverter.ToInt16(dataPassed, readPos); readPos += 2;
-                        for (int i = 0; i < len; i++) tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        for (int i = 0; i < len; i++)
+                        {
+                            tiles[loc].str_1 += (char)dataPassed[readPos++];
+                        }
+
                         readPos += 4;
                     }
                     break;
@@ -455,7 +487,7 @@ namespace GrowbrewProxy
                     {
                         // cybots
                         int r = BitConverter.ToInt32(dataPassed, readPos); readPos += 4;
-                        readPos += (r * 15);
+                        readPos += r * 15;
                         readPos += 8;
                     }
                     break;
@@ -479,11 +511,10 @@ namespace GrowbrewProxy
                     break;
                 case 0x4a:
                     {
-                         // safe vault, nothing inside.
+                        // safe vault, nothing inside.
                     }
                     break;
                 default:
-                    len = 0;
                     break; // unknown tile visual type...
             }
 
@@ -493,8 +524,9 @@ namespace GrowbrewProxy
         {
             try
             {
-                if (readPos >= dataPassed.Length) {
-                    MainForm.LogText += ("[" + DateTime.UtcNow + "] (PROXY): [" + currentWorld + "] readPos bigger than dataPassed.Length error during world serialization!\n");
+                if (readPos >= dataPassed.Length)
+                {
+                    MainForm.LogText += "[" + DateTime.UtcNow + "] (PROXY): [" + currentWorld + "] readPos bigger than dataPassed.Length error during world serialization!\n";
                     return -1;
                 }
                 ushort fg = BitConverter.ToUInt16(dataPassed, readPos); readPos += 2; // sizeof short
@@ -508,7 +540,10 @@ namespace GrowbrewProxy
                 {
                     readPos += 2;
                 }
-                if (ItemDatabase.RequiresTileExtra(fg)) TileExtra_Serialize(dataPassed, loc);
+                if (ItemDatabase.RequiresTileExtra(fg))
+                {
+                    TileExtra_Serialize(dataPassed, loc);
+                }
             }
             catch (ArgumentException)
             {
@@ -529,7 +564,7 @@ namespace GrowbrewProxy
                 dropped.y = BitConverter.ToInt32(dataPassed, readPos); readPos += 4;
                 dropped.itemCount = dataPassed[readPos++];
                 dropped.uid = BitConverter.ToInt32(dataPassed, readPos); readPos += 4;
-                MainForm.LogText += ("[" + DateTime.UtcNow + "] (PROXY): Serialized +1 dropped item object. ID: " + dropped.id.ToString() + " X:" + dropped.x.ToString() + " Y: " + dropped.y.ToString() + " UID: " + dropped.uid.ToString() + "\n");
+                MainForm.LogText += "[" + DateTime.UtcNow + "] (PROXY): Serialized +1 dropped item object. ID: " + dropped.id.ToString() + " X:" + dropped.x.ToString() + " Y: " + dropped.y.ToString() + " UID: " + dropped.uid.ToString() + "\n";
             }
             catch (ArgumentException)
             {
@@ -539,7 +574,7 @@ namespace GrowbrewProxy
             {
                 return -2;
             }
-           
+
             droppedItems.Add(dropped);
             dropped_TOTALUIDS++;
             return 0;
@@ -549,7 +584,7 @@ namespace GrowbrewProxy
         {
 
             // free mem
-           
+
             droppedItems.Clear();
             players.Clear();
             tiles = null;
@@ -573,36 +608,47 @@ namespace GrowbrewProxy
             {
                 ResetAndInit(); // just incase, may be removed when disposing or in here, ill keep it like that tho.
                 byte[] data = VariantList.get_extended_data(packet); // agh, maybe puublically declare and use then like that but too late, too lazy  to refactor now.
-                if (data.Length < 8192) return this;
-                if (data.Length > 200000) return this; // 300kb too big not gonna do that...
+                if (data.Length < 8192)
+                {
+                    return this;
+                }
+
+                if (data.Length > 200000)
+                {
+                    return this; // 300kb too big not gonna do that...
+                }
 
                 readPos += 6;
                 short pLen = BitConverter.ToInt16(data, readPos); readPos += sizeof(short); // 2
 
                 for (int i = 0; i < pLen; i++)
+                {
                     currentWorld += (char)data[readPos++];
-
+                }
 
                 width = BitConverter.ToInt32(data, readPos); readPos += sizeof(int);
                 height = BitConverter.ToInt32(data, readPos); readPos += sizeof(int);
                 tileCount = BitConverter.ToInt32(data, readPos); readPos += sizeof(int);
                 tiles = new Tile[tileCount]; // allocate exact tile data.
 
-                MainForm.LogText += ("[" + DateTime.UtcNow + "] (PROXY): Loading world: " + currentWorld + ", total tile count is: " + tileCount.ToString() + "\n");
+                MainForm.LogText += "[" + DateTime.UtcNow + "] (PROXY): Loading world: " + currentWorld + ", total tile count is: " + tileCount.ToString() + "\n";
                 if (!MainForm.globalUserData.serializeWorldsAdvanced)
                 {
-                    MainForm.LogText += ("[" + DateTime.UtcNow + "] (PROXY): NOTE: Advanced world serialization was disabled, not continuing to load tiles.\n");
+                    MainForm.LogText += "[" + DateTime.UtcNow + "] (PROXY): NOTE: Advanced world serialization was disabled, not continuing to load tiles.\n";
                     return this;
                 }
 
                 for (int i = 0; i < tileCount; i++)
                 {
-                    if (Tile_Serialize(data, i) != 0) break;
+                    if (Tile_Serialize(data, i) != 0)
+                    {
+                        break;
+                    }
                 }
-                MainForm.LogText += ("[" + DateTime.UtcNow + "] (PROXY): [" + currentWorld + "]" + " Tiles properly serialized (without any errors): " + tilesProperlySerialized.ToString() + "\n");
+                MainForm.LogText += "[" + DateTime.UtcNow + "] (PROXY): [" + currentWorld + "]" + " Tiles properly serialized (without any errors): " + tilesProperlySerialized.ToString() + "\n";
                 if (readPos >= data.Length)
                 {
-                    MainForm.LogText += ("[" + DateTime.UtcNow + "] (PROXY): [" + currentWorld + "] readPos error during world serialization!\n");
+                    MainForm.LogText += "[" + DateTime.UtcNow + "] (PROXY): [" + currentWorld + "] readPos error during world serialization!\n";
                     return this;
                 }
                 //weather n dropped items:
@@ -621,13 +667,13 @@ namespace GrowbrewProxy
                 //tiles properly serialized: " + tilesProperlySerialized.ToString() + ",
                 dropped_ITEMUID = count; // yeah at least if serializing them fails we can atleast get uid count....
                 total_bytes_serialized = (ulong)readPos;
-                MainForm.LogText += ("[" + DateTime.UtcNow + "] (PROXY): Succeeded loading world '" + currentWorld + "'! Total bytes serialized: " + total_bytes_serialized.ToString() + ",  dropped item uid count: " + count + "\n");
+                MainForm.LogText += "[" + DateTime.UtcNow + "] (PROXY): Succeeded loading world '" + currentWorld + "'! Total bytes serialized: " + total_bytes_serialized.ToString() + ",  dropped item uid count: " + count + "\n";
             }
             catch
             {
                 return this;
             }
             return this;
-        }        
+        }
     }
 }

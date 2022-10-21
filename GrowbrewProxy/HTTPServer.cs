@@ -1,25 +1,19 @@
 ﻿// thanks to iProgramInCpp#0489, most things are made by him in the GrowtopiaCustomClient, 
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading;
-using System.Linq.Expressions;
-using System.Windows.Forms;
 
 namespace GrowbrewProxy
 {
     public class HTTPServer
     {
-        static string Version = "HTTP/1.0";
+        private static readonly string Version = "HTTP/1.0";
 
-        
+
         private static MainForm mf;
-        private static HttpListener listener = new HttpListener();
+        private static readonly HttpListener listener = new();
         public static void HTTPHandler()
         {
             while (listener.IsListening)
@@ -29,7 +23,7 @@ namespace GrowbrewProxy
                     mf.AppendLog("Starting HTTP Client to Auto-get port and IP...");
 
                     string server_metadata = string.Empty;
-                    using (WebClient client = new WebClient())
+                    using (WebClient client = new())
                     {
                         server_metadata = client.DownloadString("http://www.growtopia2.com/growtopia/server_data.php");
                         client.Dispose();
@@ -42,25 +36,37 @@ namespace GrowbrewProxy
 #endif
                         Console.WriteLine("Parsing server metadata...");
 
-                        
+
 
                         string[] tokens = server_metadata.Split('\n');
                         foreach (string s in tokens)
                         {
-                            if (s.Length <= 0) continue;
-                            if (s[0] == '#') continue;
-                            if (s.StartsWith("RTENDMARKERBS1001")) continue;
-                            string key = s.Substring(0, s.IndexOf('|')).Replace("\n", "");
-                            string value = s.Substring(s.IndexOf('|') + 1);
-                            
+                            if (s.Length <= 0)
+                            {
+                                continue;
+                            }
+
+                            if (s[0] == '#')
+                            {
+                                continue;
+                            }
+
+                            if (s.StartsWith("RTENDMARKERBS1001"))
+                            {
+                                continue;
+                            }
+
+                            string key = s[..s.IndexOf('|')].Replace("\n", "");
+                            string value = s[(s.IndexOf('|') + 1)..];
+
 
                             switch (key)
                             {
                                 case "server":
                                     {
                                         // server ip
-                                       
-                                        MainForm.globalUserData.Growtopia_Master_IP = value.Substring(0, value.Length);
+
+                                        MainForm.globalUserData.Growtopia_Master_IP = value[..];
                                         break;
                                     }
                                 case "port":
@@ -107,7 +113,7 @@ namespace GrowbrewProxy
                 }
                 catch (Exception ex)
                 {
-                    
+
                     Console.WriteLine(ex.Message);
                     Thread.Sleep(1000);
                     // probably cuz we stopped it, no need to worry.
@@ -126,25 +132,41 @@ namespace GrowbrewProxy
                 return;
             }
             if (prefixes == null || prefixes.Length == 0)
+            {
                 throw new ArgumentException("prefixes");
+            }
 
             foreach (string s in prefixes)
             {
                 listener.Prefixes.Add(s);
             }
-           
+
             listener.Start();
-            if (listener.IsListening) Console.WriteLine("Listening!");
-            else Console.WriteLine("Could not listen to port 80, an error occured!");
-            Thread t = new Thread(HTTPHandler);
+            if (listener.IsListening)
+            {
+                Console.WriteLine("Listening!");
+            }
+            else
+            {
+                Console.WriteLine("Could not listen to port 80, an error occured!");
+            }
+
+            Thread t = new(HTTPHandler);
             t.Start();
             Console.WriteLine("HTTP Server is running.");
         }
 
         public static void StopHTTP()
         {
-            if (listener == null) return;
-            if (listener.IsListening) listener.Stop();
+            if (listener == null)
+            {
+                return;
+            }
+
+            if (listener.IsListening)
+            {
+                listener.Stop();
+            }
         }
     }
 }

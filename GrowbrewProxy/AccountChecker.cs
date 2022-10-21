@@ -1,13 +1,8 @@
 ﻿using ENet.Managed;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 
 namespace GrowbrewProxy
@@ -16,7 +11,7 @@ namespace GrowbrewProxy
     {
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool AllocConsole();
+        private static extern bool AllocConsole();
         public static bool SaveGemCount8K = false;
         public static bool SaveGrowtokenCount9 = false;
         public static bool SaveWLCountOver10 = false;
@@ -24,12 +19,12 @@ namespace GrowbrewProxy
         public static int Growtopia_Port = MainForm.globalUserData.Growtopia_Master_Port; // todo auto get port
         public static string Growtopia_IP = MainForm.globalUserData.Growtopia_Master_IP;
         public static MainForm.AccountTable[] accountsToCheck;
-        private static ENetHost g_Client;
-        private static ENetPeer g_Peer;
+        private static readonly ENetHost g_Client;
+        private static readonly ENetPeer g_Peer;
 
         internal static int leftToCheckIndex;
         internal static int checkCurrentIndex = 0;
-        private static PacketSending packetSender = MainForm.messageHandler.packetSender;
+        private static readonly PacketSending packetSender = MainForm.messageHandler.packetSender;
         private static void Peer_OnReceive_Client(object sender, ENetPacket e)
         {
             try
@@ -70,7 +65,9 @@ namespace GrowbrewProxy
                                     string ip = (string)vList.functionArgs[4];
 
                                     if (ip.Contains("|"))
-                                        ip = ip.Substring(0, ip.IndexOf("|"));
+                                    {
+                                        ip = ip[..ip.IndexOf("|")];
+                                    }
 
                                     int port = (int)vList.functionArgs[1];
                                     int userID = (int)vList.functionArgs[3];
@@ -97,26 +94,26 @@ namespace GrowbrewProxy
                     default:
                         break;
                 }
-            } 
+            }
             catch
             {
-                
+
             }
         }
         private static void Peer_OnDisconnect_Client(object sender, uint e)
         {
-            
+
             // dc
             // MainForm.hasLogonAlready = false;
             Console.WriteLine("[ACCOUNT-CHECKER] Disconnected from GT Server(s)!");
         }
-      
+
         public static bool Initialize()
         {
             // Setting up ENet-Client ->
             if (g_Client == null)
             {
-                AllocConsole();
+                _ = AllocConsole();
                 Console.WriteLine("Feature is temporarily disabled for fixing...");
                 /*Console.WriteLine("[ACCOUNT-CHECKER] Account Checker Bot/Client (C) 2020 playingo (aka DEERUX), github.com/playingoDEERUX/growbrewproxy\n" +
                     "DO NOT CLOSE THIS WINDOW, OTHERWISE THE ENTIRE PROXY WILL CLOSE (except do it when you wanna exit from it)! \n" +
@@ -147,7 +144,10 @@ namespace GrowbrewProxy
         }
         public static void ConnectCurrent()
         {
-            if (g_Client == null) return;
+            if (g_Client == null)
+            {
+                return;
+            }
 
             /*if (g_Client.ServiceThreadStarted)
             {

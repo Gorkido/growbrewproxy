@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -16,7 +10,7 @@ namespace GrowbrewProxy
         public StartupScreen()
         {
             InitializeComponent();
-            Task.Run(() => doStartup());
+            _ = Task.Run(() => doStartup());
         }
 
         private void doStartup()
@@ -24,7 +18,7 @@ namespace GrowbrewProxy
             Thread.Sleep(2000);
             Invoke(new Action(() =>
             {
-                this.Close();
+                Close();
             }));
         }
 
@@ -34,7 +28,7 @@ namespace GrowbrewProxy
         }
         private void StartupScreen_Load(object sender, EventArgs e)
         {
-           // using this caused some bugs...
+            // using this caused some bugs...
         }
     }
 }

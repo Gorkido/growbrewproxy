@@ -3,18 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
-using ENet.Managed;
-using System.Windows.Forms;
 
 
 namespace GrowbrewProxy
 {
-    class GamePacketProton
+    internal class GamePacketProton
     {
         // thanks to iProgramInCpp#0489, most things are made by him in the GrowtopiaCustomClient, I have just rewritten it into c# and maybe also improved. -playingo
         // NOTE: does not have the ability to use multiple args as appending values, did not want to include this in here at least!!
-        public List<object> objects = new List<object>();
+        public List<object> objects = new();
         public int NetID = -1;
         public int delay = 0;
 
@@ -25,7 +22,7 @@ namespace GrowbrewProxy
             {
                 x = x_; y = y_;
             }
-            public Vector2 Zero => new Vector2(0, 0);
+            public Vector2 Zero => new(0, 0);
         }
         public struct Vector3
         {
@@ -34,7 +31,7 @@ namespace GrowbrewProxy
             {
                 x = x_; y = y_; z = z_;
             }
-            public Vector3 Zero => new Vector3(0, 0, 0);
+            public Vector3 Zero => new(0, 0, 0);
         }
         public struct Rectf
         {
@@ -43,7 +40,7 @@ namespace GrowbrewProxy
             {
                 x = x_; y = y_; w = w_; h = h_;
             }
-            public Rectf Zero => new Rectf(0, 0, 0, 0);
+            public Rectf Zero => new(0, 0, 0, 0);
         }
 
         public void AppendInt(int i)
@@ -86,8 +83,11 @@ namespace GrowbrewProxy
             Array.Copy(BitConverter.GetBytes(delay), 0, bytesArray, 24, 4);
             Array.Copy(BitConverter.GetBytes(objects.Count), 0, bytesArray, 56, 4);
 
-            List<byte> bytes = new List<byte>();
-            for (int i = 0; i < 61; i++) bytes.Add(bytesArray[i]);
+            List<byte> bytes = new();
+            for (int i = 0; i < 61; i++)
+            {
+                bytes.Add(bytesArray[i]);
+            }
 
             // Now we need to loop through all the objects.
             byte ind = 0;
@@ -115,10 +115,8 @@ namespace GrowbrewProxy
                     bytes.AddRange(data2);
                 }
                 else
-                if (obj is string)
+                if (obj is string str) // appendString
                 {
-                    // appendString
-                    string str = (string)obj;
                     byte[] data = Encoding.ASCII.GetBytes(str);
                     byte[] data2 = new byte[2 + data.Length + 4];
                     int length = data.Length;
@@ -140,11 +138,9 @@ namespace GrowbrewProxy
                     bytes.AddRange(data2);
                 }
                 else
-                if (obj is Vector2)
+                if (obj is Vector2 vec) // appendVec
                 {
-                    // appendVec
-                    Vector2 vec = (Vector2)obj;
-                    byte[] data2 = new byte[2 + 4 * 2];
+                    byte[] data2 = new byte[2 + (4 * 2)];
                     byte[] data_1 = BitConverter.GetBytes(vec.x);
                     byte[] data_2 = BitConverter.GetBytes(vec.y);
                     Array.Copy(data_1, 0, data2, 2, 4);
@@ -154,14 +150,12 @@ namespace GrowbrewProxy
                     bytes.AddRange(data2);
                 }
                 else
-                if (obj is Vector3)
+                if (obj is Vector3 cev) // appendVec3
                 {
-                    // appendVec3
-                    Vector3 vec = (Vector3)obj;
-                    byte[] data2 = new byte[2 + 4 * 3];
-                    byte[] data_1 = BitConverter.GetBytes(vec.x);
-                    byte[] data_2 = BitConverter.GetBytes(vec.y);
-                    byte[] data_3 = BitConverter.GetBytes(vec.z);
+                    byte[] data2 = new byte[2 + (4 * 3)];
+                    byte[] data_1 = BitConverter.GetBytes(cev.x);
+                    byte[] data_2 = BitConverter.GetBytes(cev.y);
+                    byte[] data_3 = BitConverter.GetBytes(cev.z);
                     Array.Copy(data_1, 0, data2, 2, 4);
                     Array.Copy(data_2, 0, data2, 6, 4);
                     Array.Copy(data_3, 0, data2, 10, 4);
@@ -172,7 +166,7 @@ namespace GrowbrewProxy
                 // idk about rectangle but it's not really used anyway so meh
                 else
                 {
-                    throw new InvalidOperationException($"Failed to write {obj.GetType().ToString()} object to packet data.");
+                    throw new InvalidOperationException($"Failed to write {obj.GetType()} object to packet data.");
                 }
                 ind++;
             }
@@ -185,7 +179,7 @@ namespace GrowbrewProxy
         }
     };
 
-    class VariantList
+    internal class VariantList
     {
         // this class has been entirely made by me, based on the code available on the gt bot of anybody :)
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
@@ -194,8 +188,8 @@ namespace GrowbrewProxy
         public struct VarList
         {
             public string FunctionName;
-            public int netID;           
-            public uint delay;           
+            public int netID;
+            public uint delay;
             public object[] functionArgs;
         };
 
@@ -208,7 +202,7 @@ namespace GrowbrewProxy
         };
 
         public static byte[] get_extended_data(byte[] pktData)
-        {        
+        {
             return pktData.Skip(56).ToArray();
         }
 
@@ -220,11 +214,11 @@ namespace GrowbrewProxy
                 byte[] structPackage = new byte[packetLen - 4];
                 Array.Copy(package, 4, structPackage, 0, packetLen - 4);
                 int p2Len = BitConverter.ToInt32(package, 56);
-                if (((byte)(package[16]) & 8) != 0)
+                if ((package[16] & 8) != 0)
                 {
                     if (packetLen < p2Len + 60)
                     {
-                        MainForm.LogText += ("[" + DateTime.UtcNow + "] (PROXY): (ERROR) Too small extended packet to be valid!\n");
+                        MainForm.LogText += "[" + DateTime.UtcNow + "] (PROXY): (ERROR) Too small extended packet to be valid!\n";
                     }
                 }
                 else
@@ -238,64 +232,72 @@ namespace GrowbrewProxy
 
         public static VarList GetCall(byte[] package)
         {
-           
-            VarList varList = new VarList();
+
+            VarList varList = new();
             //if (package.Length < 60) return varList;
             int pos = 0;
             //varList.netID = BitConverter.ToInt32(package, 8);
             //varList.delay = BitConverter.ToUInt32(package, 24);
             byte argsTotal = package[pos];
             pos++;
-                if (argsTotal > 7) return varList;
-                varList.functionArgs = new object[argsTotal];
+            if (argsTotal > 7)
+            {
+                return varList;
+            }
 
-                for (int i = 0; i < argsTotal; i++)
+            varList.functionArgs = new object[argsTotal];
+
+            for (int i = 0; i < argsTotal; i++)
+            {
+                varList.functionArgs[i] = 0; // just to be sure...
+                byte index = package[pos]; pos++; // pls dont bully sm
+                byte type = package[pos]; pos++;
+
+
+                switch (type)
                 {
-                    varList.functionArgs[i] = 0; // just to be sure...
-                    byte index = package[pos]; pos++; // pls dont bully sm
-                    byte type = package[pos]; pos++;
+                    case 1:
+                        {
+                            float vFloat = BitConverter.ToUInt32(package, pos); pos += 4;
+                            varList.functionArgs[index] = vFloat;
+                            break;
+                        }
+                    case 2: // string
+                        int strLen = BitConverter.ToInt32(package, pos); pos += 4;
+                        string v = Encoding.ASCII.GetString(package, pos, strLen);
+                        pos += strLen;
 
+                        if (index == 0)
+                        {
+                            varList.FunctionName = v;
+                        }
 
-                    switch (type)
-                    {
-                        case 1:
+                        if (index > 0)
+                        {
+                            if (varList.FunctionName == "OnSendToServer") // exceptionary function, having it easier like this :)
                             {
-                                float vFloat = BitConverter.ToUInt32(package, pos); pos += 4;
-                                varList.functionArgs[index] = vFloat;
-                                break;
-                            }
-                        case 2: // string
-                            int strLen = BitConverter.ToInt32(package, pos); pos += 4;
-                            string v = string.Empty;
-                            v = Encoding.ASCII.GetString(package, pos, strLen); pos += strLen;
-
-                            if (index == 0)
-                                 varList.FunctionName = v;
-
-                            if (index > 0)
-                            {
-                                if (varList.FunctionName == "OnSendToServer") // exceptionary function, having it easier like this :)
+                                MainForm.globalUserData.doorid = v[(v.IndexOf("|") + 1)..]; // doorid
+                                if (v.Length >= 8)
                                 {
-                                    MainForm.globalUserData.doorid = v.Substring(v.IndexOf("|") + 1); // doorid
-                                    if (v.Length >= 8)
-                                        v = v.Substring(0, v.IndexOf("|"));
+                                    v = v[..v.IndexOf("|")];
                                 }
-
-                                varList.functionArgs[index] = v;
                             }
-                            break;
-                        case 5: // uint
-                            uint vUInt = BitConverter.ToUInt32(package, pos); pos += 4;
-                            varList.functionArgs[index] = vUInt;
-                            break;
-                        case 9: // int (can hold negative values, of course they are always casted but its just a sign from the server that the value was intended to hold negative values as well)
-                            int vInt = BitConverter.ToInt32(package, pos); pos += 4;
-                            varList.functionArgs[index] = vInt;
-                            break;
-                        default:
-                            break;
-                    }
+
+                            varList.functionArgs[index] = v;
+                        }
+                        break;
+                    case 5: // uint
+                        uint vUInt = BitConverter.ToUInt32(package, pos); pos += 4;
+                        varList.functionArgs[index] = vUInt;
+                        break;
+                    case 9: // int (can hold negative values, of course they are always casted but its just a sign from the server that the value was intended to hold negative values as well)
+                        int vInt = BitConverter.ToInt32(package, pos); pos += 4;
+                        varList.functionArgs[index] = vInt;
+                        break;
+                    default:
+                        break;
                 }
+            }
             return varList;
         }
     }

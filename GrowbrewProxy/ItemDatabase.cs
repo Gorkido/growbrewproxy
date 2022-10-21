@@ -1,11 +1,8 @@
 ﻿// thanks to iProgramInCpp#0489, most things are made by him in the GrowtopiaCustomClient, 
 // I have just rewritten it into c# and maybe also improved. -playingo
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GrowbrewProxy
 {
@@ -59,24 +56,31 @@ namespace GrowbrewProxy
             public int extraUnkInt1;
         };
 
-        public static List<ItemDefinition> itemDefs = new List<ItemDefinition>();
+        public static List<ItemDefinition> itemDefs = new();
 
         public static bool isBackground(int itemID) // thanks for the dev iProgramInCpp for telling me a reliable method on how to determine between foreground and background in GT.
         {
             ItemDefinition def = GetItemDef(itemID);
             byte actType = def.actionType;
-            return (actType == 18 || actType == 23 || actType == 28);
+            return actType is 18 or 23 or 28;
         }
         public static ItemDefinition GetItemDef(int itemID)
         {
-            if (itemID < 0 || itemID > (int)itemDefs.Count()) return itemDefs[0];
+            if (itemID < 0 || itemID > itemDefs.Count())
+            {
+                return itemDefs[0];
+            }
+
             ItemDefinition def = itemDefs[itemID];
             if (def.id != itemID)
             {
                 // For some reason, something is off.
-                foreach (var d in itemDefs)
+                foreach (ItemDefinition d in itemDefs)
                 {
-                    if (d.id == itemID) return d;
+                    if (d.id == itemID)
+                    {
+                        return d;
+                    }
                 }
             }
             return def;
@@ -151,35 +155,51 @@ namespace GrowbrewProxy
         {
             string a = File.ReadAllText("include/base.txt");
             List<string> aaa = a.Split('|').ToList();
-            if (aaa.Count < 3) return;
-            int itemCount = -1;
-            int.TryParse(aaa[2], out itemCount);
-            if (itemCount == -1) return;
+            if (aaa.Count < 3)
+            {
+                return;
+            }
+
+            _ = int.TryParse(aaa[2], out int itemCount);
+            if (itemCount == -1)
+            {
+                return;
+            }
+
             short id = 0;
             itemDefs.Clear();
-            ItemDefinition def = new ItemDefinition();
-            using (StreamReader sr = File.OpenText("include/item_defs.txt"))
+            ItemDefinition def = new();
+            using StreamReader sr = File.OpenText("include/item_defs.txt");
+            string s = string.Empty;
+            while ((s = sr.ReadLine()) != null)
             {
-                string s = String.Empty;
-                while ((s = sr.ReadLine()) != null)
+                if (s.Length < 2)
                 {
-                    if (s.Length < 2) continue;
-                    if (s.Contains("//")) continue;
-                    List<string> infos = s.Split('\\').ToList();
-                    if (infos[0] != "add_item") continue;
-                   
-                    def.id = short.Parse(infos[1]);
-                    def.actionType = byte.Parse(infos[4]);
-                    def.itemName = infos[6];
-
-                    if (def.id != id)
-                    {
-                        // unordered db item, can cause problems!!
-
-                    }
-                    itemDefs.Add(def);
-                    id++;
+                    continue;
                 }
+
+                if (s.Contains("//"))
+                {
+                    continue;
+                }
+
+                List<string> infos = s.Split('\\').ToList();
+                if (infos[0] != "add_item")
+                {
+                    continue;
+                }
+
+                def.id = short.Parse(infos[1]);
+                def.actionType = byte.Parse(infos[4]);
+                def.itemName = infos[6];
+
+                if (def.id != id)
+                {
+                    // unordered db item, can cause problems!!
+
+                }
+                itemDefs.Add(def);
+                id++;
             }
         }
     }

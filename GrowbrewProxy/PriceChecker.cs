@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace GrowbrewProxy
 {
-    class PriceChecker
+    internal class PriceChecker
     {
         public const int SUPPORTED_COLUMNS = 3; // Increase this if there are more values available in the future.
         public struct ItemPrice
@@ -27,17 +24,17 @@ namespace GrowbrewProxy
 
         public class ItemPriceList
         {
-            public List<ItemPrice> itemPrices = new List<ItemPrice>();
+            public List<ItemPrice> itemPrices = new();
 
             public string Serialize()
             {
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine(GetCount().ToString());
+                StringBuilder sb = new();
+                _ = sb.AppendLine(GetCount().ToString());
 
                 foreach (ItemPrice iprice in itemPrices)
                 {
-                    sb.AppendJoin('|', iprice.name, iprice.quantity, iprice.price);
-                    sb.AppendLine();
+                    _ = sb.AppendJoin('|', iprice.name, iprice.quantity, iprice.price);
+                    _ = sb.AppendLine();
                 }
 
                 return sb.ToString();
@@ -45,41 +42,47 @@ namespace GrowbrewProxy
 
             public static ItemPriceList Deserialize(string rawText)
             {
-                ItemPriceList iPriceList = new ItemPriceList();
+                ItemPriceList iPriceList = new();
                 if (rawText != "")
                 {
-                    
+
                     string[] lines = rawText.Split("\n");
 
                     if (lines.Length > 0)
                     {
-                        int count = 0;
-                        if (!int.TryParse(lines[0], out count))
+                        if (!int.TryParse(lines[0], out _))
+                        {
                             throw new Exception("Unable to serialize due to failure of retrieving available item count");
+                        }
 
                         foreach (string line in lines)
                         {
                             string[] values = line.Split('|');
 
                             if (values.Length == SUPPORTED_COLUMNS)
+                            {
                                 iPriceList.Add(new ItemPrice(values[0], int.Parse(values[1]), int.Parse(values[2])));
+                            }
                         }
                     }
                 }
-                
+
                 return iPriceList;
             }
 
             public ItemPrice[] FindByName(string name, bool exact = false)
             {
-                List<ItemPrice> iprices = new List<ItemPrice>();
+                List<ItemPrice> iprices = new();
                 foreach (ItemPrice iprice in itemPrices)
                 {
                     bool needAdd = exact ? name == iprice.name : iprice.name.StartsWith(name);
                     if (needAdd)
                     {
                         iprices.Add(iprice);
-                        if (exact) break; // optimize
+                        if (exact)
+                        {
+                            break; // optimize
+                        }
                     }
                 }
                 return iprices.ToArray();
@@ -87,25 +90,37 @@ namespace GrowbrewProxy
 
             public ItemPrice[] FindByNameIgnoreCase(string name, bool exact = false)
             {
-                List<ItemPrice> iprices = new List<ItemPrice>();
-
-                string pNameLower = name.ToLower();
+                List<ItemPrice> iprices = new();
+                _ = name.ToLower();
                 foreach (ItemPrice iprice in itemPrices)
                 {
                     bool needAdd = exact ? name == iprice.name : iprice.name.StartsWith(name);
                     if (needAdd)
                     {
                         iprices.Add(iprice);
-                        if (exact) break; // optimize
+                        if (exact)
+                        {
+                            break; // optimize
+                        }
                     }
                 }
                 return iprices.ToArray();
             }
 
-            public int GetCount() => itemPrices.Count;
-            public void Add(ItemPrice item) => itemPrices.Add(item);
+            public int GetCount()
+            {
+                return itemPrices.Count;
+            }
 
-            public bool Remove(ItemPrice item) => itemPrices.Remove(item);
+            public void Add(ItemPrice item)
+            {
+                itemPrices.Add(item);
+            }
+
+            public bool Remove(ItemPrice item)
+            {
+                return itemPrices.Remove(item);
+            }
         }
 
         public static ItemPriceList iPriceList = null; // cache
@@ -113,7 +128,7 @@ namespace GrowbrewProxy
         public static string RefreshPrices(string url) // Refresh only when it's needed, it's wasteful or laggy to do it everytime, so items are cached.
         {
             string content = "";
-            using (var wc = new WebClient())
+            using (WebClient wc = new())
             {
                 try
                 {
@@ -145,7 +160,7 @@ namespace GrowbrewProxy
             {
                 return iPriceList; // return immediately.
             }
-            
+
             throw new Exception($"GetItemPriceListFromUrl({url}) failed for an unknown reason.");
         }
     }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace GrowbrewProxy
 {
@@ -11,28 +7,23 @@ namespace GrowbrewProxy
         public static string CreateMD5(string input)
         {
             // Use input string to calculate MD5 hash
-            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
-            {
-                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
+            using System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
+            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            byte[] hashBytes = md5.ComputeHash(inputBytes);
 
-                // Convert the byte array to hexadecimal string
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < hashBytes.Length; i++)
-                {
-                    sb.Append(hashBytes[i].ToString("X2"));
-                }
-                return sb.ToString();
+            // Convert the byte array to hexadecimal string
+            StringBuilder sb = new();
+            for (int i = 0; i < hashBytes.Length; i++)
+            {
+                _ = sb.Append(hashBytes[i].ToString("X2"));
             }
+            return sb.ToString();
         }
 
         public static string GetHwid()
         {
-            string hStrMd = "MD_NONE";
-
             string cpuID = identifier("win32_processor", "processorID");
-            hStrMd = CreateMD5(cpuID);
-
+            string hStrMd = CreateMD5(cpuID);
             return hStrMd;
         }
 
@@ -40,7 +31,7 @@ namespace GrowbrewProxy
         {
             string result = "";
             System.Management.ManagementClass mc =
-        new System.Management.ManagementClass(wmiClass);
+        new(wmiClass);
             System.Management.ManagementObjectCollection moc = mc.GetInstances();
             foreach (System.Management.ManagementObject mo in moc)
             {
